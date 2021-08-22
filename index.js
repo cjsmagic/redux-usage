@@ -1,4 +1,5 @@
 import { createStore, applyMiddleware } from 'redux';
+import thunk from 'redux-thunk';
 import './style.css';
 
 function counterReducer(state = { value: 0 }, action) {
@@ -31,7 +32,21 @@ function logger(deps) {
   };
 }
 
-const store = createStore(counterReducer, applyMiddleware(logger));
+const thunkMiddleware = ({ dispatch, getState }) => next => action => {
+  // If the "action" is actually a function instead...
+  if (typeof action === 'function') {
+    // then call the function and pass `dispatch` and `getState` as arguments
+    return action(dispatch, getState);
+  }
+
+  // Otherwise, it's a normal action - send it onwards
+  return next(action);
+};
+
+const store = createStore(
+  counterReducer,
+  applyMiddleware(logger, thunk.withExtraArgument(console)) // we can replace thunk with thunkMiddleware
+);
 
 const renderCounter = () => {
   const counterElement = document.getElementById('counter');
@@ -41,12 +56,13 @@ const renderCounter = () => {
 renderCounter();
 store.subscribe(renderCounter);
 
-const incr = () => {
-  return { type: 'counter/incremented' };
+const incr = (dispatch, getState, arg) => {
+  arg.log('using thunk with extra param', getState());
+  dispatch({ type: 'counter/incremented' });
 };
 
 document.getElementById('add').addEventListener('click', () => {
-  store.dispatch(incr());
+  store.dispatch(incr);
 });
 
 document.getElementById('subtract').addEventListener('click', () => {
