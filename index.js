@@ -43,15 +43,46 @@ const thunkMiddleware = ({ dispatch, getState }) => next => action => {
   return next(action);
 };
 
+function ViewBinder(element, attribute, property, value) {
+  var _this = this;
+  _this[property] = value;
+
+  this.valueGetter = function() {
+    return _this[property];
+  };
+
+  this.valueSetter = function(value) {
+    element[attribute] = value;
+  };
+
+  Object.defineProperty(_this, property, {
+    get: this.valueGetter,
+    set: this.valueSetter
+  });
+
+  return _this;
+}
+
 const store = createStore(
   counterReducer,
   applyMiddleware(logger, thunk.withExtraArgument(console)) // we can replace thunk with thunkMiddleware
 );
 
+const counterElement = document.getElementById('counter');
+const counterView = new ViewBinder(counterElement, 'innerText', 'value', 0);
+
+const nameView = new ViewBinder(
+  document.getElementById('name'),
+  'innerText',
+  'value',
+  'clarence'
+);
+nameView.name = 'clarence';
+
 const renderCounter = () => {
-  const counterElement = document.getElementById('counter');
   const state = store.getState();
-  counterElement.innerText = state.value;
+  counterView.value = state.value;
+  nameView.value = state.value;
 };
 renderCounter();
 store.subscribe(renderCounter);
